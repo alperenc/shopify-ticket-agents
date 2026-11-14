@@ -40,7 +40,7 @@ Run one ticket by merchant name, or all 24 (results go to `out/`, which is ignor
 .venv/bin/python agents/one_step.py
 ```
 
-Set `OPENROUTER_MODEL` to change the model. The default is `nvidia/nemotron-3-ultra-550b-a55b:free`. Free models are rate-limited per minute and per day; a run that hits the daily cap records errors for the tickets it could not answer.
+The default model is `inclusionai/ling-3.2-flash:free`. Set `OPENROUTER_MODEL` to change it. Free models are rate-limited per minute and per day; a run that hits the daily cap records errors for the tickets it could not answer.
 
 ### Prompt
 
@@ -50,22 +50,22 @@ You route Shopify merchant support tickets. The user message is the merchant's t
 
 ### Run output: Maria Sousa (SUP-48213)
 
-Run on `inclusionai/ling-3.2-flash:free`, because the default model had hit its daily free limit:
-
 ```text
 ticket:          SUP-48213 (Maria Sousa)
 model:           inclusionai/ling-3.2-flash:free
 route:           orders
-reason:          The ticket reports incorrect domestic and international shipping rates being applied to customer orders in Portugal and Europe.
+reason:          The merchant reports incorrect shipping rates applied to orders, with domestic and international postage charges reversed across multiple orders.
 expected_route:  orders
 route matches expected: True
 ```
 
 Route check: SUP-48213 routed to `orders`, matching `expected_route` `orders`.
 
-- **Fresh run:** yes. The model was called live for this run; the output above was not reused from an earlier run.
-- **Model:** the fallback `inclusionai/ling-3.2-flash:free`, not the default. The default `nvidia/nemotron-3-ultra-550b-a55b:free` returned a daily-limit error for this ticket. The route is therefore checked on the fallback model only.
-- **Reason vs. message:** the merchant's message says shipping rates have been wrong since Saturday, with buyers in Europe paying the Portuguese domestic rate and buyers in Portugal being charged international rates. The reason states that same swap in general terms. It does not mention the Braga customer or the €14.90 example from the message.
+The reason states the swap from the merchant's message: buyers in Europe were charged the Portuguese domestic rate, and buyers in Portugal were charged international rates. It does not mention the Braga customer example.
+
+### Run output: all 24 tickets
+
+Route check across the full test set: 24 of 24 routes match `expected_route`, with no errors. Results are in `out/one_step_inclusionai_ling-3.2-flash_free.jsonl`, which is ignored by git.
 
 ## Status
 

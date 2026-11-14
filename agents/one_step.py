@@ -22,7 +22,7 @@ from openai import OpenAI, RateLimitError
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CSV_PATH = ROOT / "Shopify Merchant Ticket Test Set (24 labelled tickets).csv"
-MODEL = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
+MODEL = os.getenv("OPENROUTER_MODEL", "inclusionai/ling-3.2-flash:free")
 # One results file per model so runs don't overwrite each other.
 OUT_PATH = ROOT / "out" / f"one_step_{MODEL.replace('/', '_').replace(':', '_')}.jsonl"
 ROUTES = {"billing", "orders"}
@@ -76,7 +76,7 @@ def call_model(state: State) -> dict:
         try:
             resp = client.chat.completions.create(
                 model=MODEL,
-                max_tokens=400,
+                max_tokens=1500,  # Ling spends most of a small budget on reasoning and returns no text
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": state["message_body"]},
