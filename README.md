@@ -22,6 +22,47 @@ Agents that resolve Shopify merchant support tickets without a human in the loop
 
 Tickets marked `should_escalate = true` cover cases such as chargeback disputes, bulk cancellations, refunds above the agent's limit, and payout holds. These are expected to be handed to a human, not closed by an agent.
 
+## One-step flow
+
+`agents/one_step.py` is a single-node LangGraph graph. It sends one ticket's `message_body` to a free model on OpenRouter and prints the route (`billing` or `orders`) and a one-sentence reason.
+
+Setup:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+echo 'OPENROUTER_API_KEY=...' > .env   # not committed; .env is in .gitignore
+```
+
+Run one ticket by merchant name, or all 24 (results go to `out/`, which is ignored by git):
+
+```bash
+.venv/bin/python agents/one_step.py --merchant "Maria Sousa"
+.venv/bin/python agents/one_step.py
+```
+
+Set `OPENROUTER_MODEL` to change the model. The default is `nvidia/nemotron-3-ultra-550b-a55b:free`. Free models are rate-limited per minute and per day; a run that hits the daily cap records errors for the tickets it could not answer.
+
+### Prompt
+
+```text
+You route Shopify merchant support tickets. The user message is the merchant's ticket text. Choose exactly one route. 'billing' covers charges, payouts, plan or app subscriptions, invoices, chargebacks and payment holds. 'orders' covers orders, fulfilment, shipping, addresses, and refunds or cancellations of orders. Reply with only a JSON object and nothing else: {"route": "billing" or "orders", "reason": "one sentence"}. The reason is neutral, third-person and in English. Do not address the merchant or the reader as 'you'. Do not invent order numbers, amounts, dates or facts that are not in the ticket.
+```
+
+### Run output: Maria Sousa (SUP-48213)
+
+Run on `inclusionai/ling-3.2-flash:free`, because the default model had hit its daily free limit:
+
+```text
+ticket:          SUP-48213 (Maria Sousa)
+model:           inclusionai/ling-3.2-flash:free
+route:           orders
+reason:          The ticket reports incorrect domestic and international shipping rates being applied to customer orders in Portugal and Europe.
+expected_route:  orders
+route matches expected: True
+```
+
+Route check: SUP-48213 routed to `orders`, matching `expected_route` `orders`.
+
 ## Status
 
-Early stage. The test set is the first artifact; agents and an evaluation harness will follow.
+Early stage. The test set is the first artifact; the one-step flow is the first agent. An evaluation harness will follow.
