@@ -63,6 +63,10 @@ route matches expected: True
 
 Route check: SUP-48213 routed to `orders`, matching `expected_route` `orders`.
 
+- **Fresh run:** yes. The model was called live for this run; the output above was not reused from an earlier run.
+- **Model:** the fallback `inclusionai/ling-3.2-flash:free`, not the default. The default `nvidia/nemotron-3-ultra-550b-a55b:free` returned a daily-limit error for this ticket. The route is therefore checked on the fallback model only.
+- **Reason vs. message:** the merchant's message says shipping rates have been wrong since Saturday, with buyers in Europe paying the Portuguese domestic rate and buyers in Portugal being charged international rates. The reason states that same swap in general terms. It does not mention the Braga customer or the €14.90 example from the message.
+
 ## Status
 
 Early stage. The test set is the first artifact; the one-step flow is the first agent. An evaluation harness will follow.
