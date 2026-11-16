@@ -1,205 +1,334 @@
-"""Eval for the supervisor graph: run every ticket, save a per-node trace, score routing and resolution.
+"""Eval for the billing/orders supervisor graph.
 
-This script does not change agents/supervisor.py. It wraps the module's functions (triage,
-run_agent, chat, execute) before the graph is built, so every model reply and every call
-is recorded under the node that made it.
+Loads shopify_merchant_tickets_test_set.csv, runs every ticket through the
+graph with LangSmith tracing on, and writes eval/results.csv.
 
-Routing: predicted agent == CSV expected_route.
-Resolution: the successful write calls match the CSV's expected writes. It checks which
-functions were written, not the values written. Escalation tickets pass only with no
-successful writes. A ticket is not_evaluable when its shop is not in the fake store, or
-when the CSV names a write with no matching mock function.
-
-Usage (from the repo root):
+Usage (from the repo root, one command):
     .venv/bin/python eval/run_eval.py
-
-Writes eval/traces/<ticket_id>.json and eval/results.csv.
 """
 
+from __future__ import annotations
+
 import csv
-import json
 import os
 import pathlib
+import re
 import sys
 import time
+from decimal import Decimal, InvalidOperation
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "agents"))
 from dotenv import load_dotenv  # noqa: E402
 import supervisor as sv  # noqa: E402
 
-TRACE_DIR = ROOT / "eval" / "traces"
+CSV_PATH = ROOT / "shopify_merchant_tickets_test_set.csv"
 RESULTS_PATH = ROOT / "eval" / "results.csv"
 PAUSE_S = 4
 
-# CSV tool names that the mock API calls differently.
-ALIAS = {
+# CSV tool names the mock API (and therefore the graph) calls differently.
+# Resolution grading maps both sides through this table so a mock call counts
+# as the expected name. expected_fix is the human description of the same action.
+TOOL_ALIASES = {
     "get_billing_invoice": "list_billing_charges",
     "list_app_charges": "list_billing_charges",
     "apply_billing_credit": "issue_billing_credit",
     "get_shipping_profile": "get_delivery_profile",
     "update_order_address": "update_order_shipping_address",
 }
-# CSV write names with no mock function.
-NO_MOCK_WRITE = {"refund_app_charge", "update_fulfillment"}
+
+# Tools whose order_id / amount arguments are the ticket fields named in expected_fix.
+ORDER_ID_ARG_TOOLS = {
+    "get_order",
+    "list_order_transactions",
+    "calculate_refund",
+    "create_refund",
+    "recalculate_order_shipping",
+    "update_order_shipping_address",
+    "update_order_address",
+    "cancel_order",
+    "add_order_note",
+    "get_fulfillment",
+    "update_fulfillment",
+}
+AMOUNT_ARG_TOOLS = {
+    "calculate_refund",
+    "create_refund",
+    "issue_billing_credit",
+    "apply_billing_credit",
+    "refund_app_charge",
+}
 
 RESULT_FIELDS = [
-    "ticket_id", "merchant_name", "shop_domain", "shop_in_store", "expected_route", "predicted_route",
-    "routing", "should_escalate", "expected_writes", "executed_writes", "rejected_calls", "triage_error",
-    "resolution", "resolution_note",
+    "ticket_id",
+    "predicted_route",
+    "tools_called",
+    "final_status",
+    "routing_pass",
+    "resolution_pass",
 ]
 
-# ---- trace recording by wrapping the supervisor's functions ----
-EVENTS: list[dict] = []
-CURRENT = {"node": None}
-
-_orig_chat = sv.chat
-_orig_execute = sv.execute
-_orig_triage = sv.triage
-_orig_run_agent = sv.run_agent
+_CURRENCY_RE = re.compile(r"^[A-Z]{3}\s+")
+_AMOUNT_NOISE_RE = re.compile(r"[^\d.\-]")
 
 
-def _chat(messages):
+def canonical_tool_name(name: str) -> str:
+    key = (name or "").strip()
+    return TOOL_ALIASES.get(key, key)
+
+
+def parse_expected_tools(expected_tool_calls: str) -> list[str]:
+    return [t.strip() for t in (expected_tool_calls or "").split(";") if t.strip()]
+
+
+def parse_amount(value) -> Decimal | None:
+    """Parse a ticket amount ('USD 29.00', 'EUR 1,062.40') or a tool arg (29 / 29.00)."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float, Decimal)):
+        return Decimal(str(value))
+    text = str(value).strip()
+    if not text:
+        return None
+    text = _CURRENCY_RE.sub("", text)
+    text = text.replace(",", "")
+    text = _AMOUNT_NOISE_RE.sub("", text)
+    if text in {"", "-", ".", "-."}:
+        return None
     try:
-        text = _orig_chat(messages)
+        return Decimal(text)
+    except InvalidOperation:
+        return None
+
+
+def amounts_match(actual, expected) -> bool:
+    if actual is None or actual == "" or expected is None or str(expected).strip() == "":
+        return True
+    left, right = parse_amount(actual), parse_amount(expected)
+    if left is None or right is None:
+        return str(actual).strip() == str(expected).strip()
+    return left.quantize(Decimal("0.01")) == right.quantize(Decimal("0.01"))
+
+
+def order_ids_match(actual, expected) -> bool:
+    if actual is None or actual == "" or expected is None or str(expected).strip() == "":
+        return True
+    return str(actual).strip() == str(expected).strip()
+
+
+def call_args_match(tool: str, args: dict, order_id: str, amount_in_question: str) -> bool:
+    """True when order_id / amount arguments match the ticket fields expected_fix refers to."""
+    args = args or {}
+    canon = canonical_tool_name(tool)
+    expected_oid = (order_id or "").strip()
+    expected_amt = (amount_in_question or "").strip()
+    if expected_oid and (canon in ORDER_ID_ARG_TOOLS or "order_id" in args):
+        if "order_id" not in args or not order_ids_match(args.get("order_id"), expected_oid):
+            return False
+    if expected_amt and (canon in AMOUNT_ARG_TOOLS or "amount" in args):
+        if "amount" not in args or not amounts_match(args.get("amount"), expected_amt):
+            return False
+    return True
+
+
+def extract_tool_calls(calls: list) -> list[dict]:
+    """Keep entries that named a tool. LLM/parse errors have no tool key."""
+    out = []
+    for call in calls or []:
+        name = call.get("tool") if isinstance(call, dict) else None
+        if not name:
+            continue
+        args = call.get("args") if isinstance(call.get("args"), dict) else {}
+        out.append({"tool": name, "args": args, "status": call.get("status")})
+    return out
+
+
+def tools_called_cell(calls: list[dict]) -> str:
+    return ";".join(c["tool"] for c in calls)
+
+
+def grade_routing(predicted_route: str, expected_route: str) -> str:
+    predicted = (predicted_route or "").strip()
+    expected = (expected_route or "").strip()
+    return "pass" if predicted and predicted == expected else "fail"
+
+
+def grade_resolution(
+    calls: list[dict],
+    expected_tool_calls: str,
+    expected_fix: str,  # noqa: ARG001 — read together with expected_tool_calls
+    order_id: str,
+    amount_in_question: str,
+    *,
+    errored: bool,
+) -> str:
+    """Pass when every expected tool was called with matching order_id / amount.
+
+    Tool order does not matter. Extra calls are allowed. A run with no tool
+    calls, or a run that errored, is always fail.
+    """
+    if errored:
+        return "fail"
+    if not calls:
+        return "fail"
+    expected_names = parse_expected_tools(expected_tool_calls)
+    actual = extract_tool_calls(calls)
+    if not actual:
+        return "fail"
+    for expected_name in expected_names:
+        wanted = canonical_tool_name(expected_name)
+        matching = [
+            c
+            for c in actual
+            if canonical_tool_name(c["tool"]) == wanted
+            and call_args_match(c["tool"], c["args"], order_id, amount_in_question)
+        ]
+        if not matching:
+            return "fail"
+    return "pass"
+
+
+def routing_pass(run, example):
+    """LangSmith evaluator: one metric, predicted_route vs expected_route."""
+    run_outputs = run.outputs if hasattr(run, "outputs") else run.get("outputs", {}) or {}
+    example_outputs = example.outputs if hasattr(example, "outputs") else example.get("outputs", {}) or {}
+    predicted = run_outputs.get("predicted_route") or ""
+    expected = example_outputs.get("expected_route") or ""
+    score = 1 if grade_routing(predicted, expected) == "pass" else 0
+    return {"score": score, "comment": f"predicted={predicted!r} expected={expected!r}"}
+
+
+def resolution_pass(run, example):
+    """LangSmith evaluator: one metric, expected tools + order_id/amount args."""
+    run_outputs = run.outputs if hasattr(run, "outputs") else run.get("outputs", {}) or {}
+    example_outputs = example.outputs if hasattr(example, "outputs") else example.get("outputs", {}) or {}
+    status = run_outputs.get("final_status") or ""
+    score = 1 if grade_resolution(
+        run_outputs.get("calls") or [],
+        example_outputs.get("expected_tool_calls") or "",
+        example_outputs.get("expected_fix") or "",
+        example_outputs.get("order_id") or "",
+        example_outputs.get("amount_in_question") or "",
+        errored=status.startswith("error"),
+    ) == "pass" else 0
+    return {"score": score, "comment": f"tools={run_outputs.get('tools_called')!r} status={status!r}"}
+
+
+def run_one(app, row: dict) -> dict:
+    tid = row["ticket_id"]
+    shop = sv.SHOP_FOR_TICKET.get(tid, row["shop_domain"])
+    sv.mock.reset_store()
+    try:
+        state = app.invoke(
+            {"ticket": row, "shop_domain": shop, "decision": None, "error": "", "calls": []},
+            config={
+                "run_name": tid,
+                "tags": ["eval", tid],
+                "metadata": {
+                    "ticket_id": tid,
+                    "expected_route": row["expected_route"],
+                    "expected_fix": row["expected_fix"],
+                },
+            },
+        )
     except Exception as exc:
-        EVENTS.append({"node": CURRENT["node"], "event": "llm_error", "messages_sent": len(messages),
-                       "error": f"{type(exc).__name__}: {exc}"})
-        raise
-    EVENTS.append({"node": CURRENT["node"], "event": "llm_reply", "messages_sent": len(messages),
-                   "raw": text[:2000]})
-    return text
+        return {
+            "predicted_route": "",
+            "tools_called": [],
+            "calls": [],
+            "final_status": f"error: {type(exc).__name__}: {exc}",
+        }
+
+    if state.get("decision"):
+        predicted = state["decision"].get("agent") or ""
+    else:
+        predicted = ""
+    calls = state.get("calls") or []
+    tool_calls = extract_tool_calls(calls)
+    if state.get("error"):
+        final_status = f"error: {state['error']}"
+    elif any(isinstance(c, dict) and c.get("status") == "error" for c in calls):
+        messages = [
+            c.get("message", "error")
+            for c in calls
+            if isinstance(c, dict) and c.get("status") == "error"
+        ]
+        final_status = f"error: {messages[0]}" if messages else "error: agent error"
+    elif not tool_calls:
+        final_status = "no tool calls"
+    else:
+        final_status = "ok"
+    return {
+        "predicted_route": predicted,
+        "tools_called": tool_calls,
+        "calls": calls,
+        "final_status": final_status,
+    }
 
 
-def _execute(agent, call, shop_domain):
-    result = _orig_execute(agent, call, shop_domain)
-    EVENTS.append({"node": CURRENT["node"], "event": "call", "tool": result.get("tool"),
-                   "args": result.get("args"), "status": result.get("status"),
-                   "message": result.get("message", "")})
-    return result
-
-
-def _triage(state):
-    CURRENT["node"] = "triage"
-    return _orig_triage(state)
-
-
-def _run_agent(agent, ticket, shop_domain):
-    CURRENT["node"] = f"{agent}_agent"
-    return _orig_run_agent(agent, ticket, shop_domain)
-
-
-# Patch before build_graph() so the graph picks up the wrapped functions.
-sv.chat = _chat
-sv.execute = _execute
-sv.triage = _triage
-sv.run_agent = _run_agent
-
-
-def expected_writes(csv_tools: str) -> tuple[set, list]:
-    names = [t.strip() for t in csv_tools.split(";") if t.strip()]
-    unmapped = [t for t in names if t in NO_MOCK_WRITE]
-    mapped = {ALIAS.get(t, t) for t in names}
-    writes = {t for t in mapped if t in sv.REGISTRY and sv.REGISTRY[t]["mode"] == "WRITE"}
-    return writes, unmapped
-
-
-def score_resolution(row: dict, calls: list, shop_in_store: bool) -> tuple[str, str]:
-    if not shop_in_store:
-        return "not_evaluable", "shop not in fake store"
-    exp, unmapped = expected_writes(row["expected_tool_calls"])
-    done = {c["tool"] for c in calls if c.get("mode") == "WRITE" and c.get("status") == "ok"}
-    if row["should_escalate"].strip().lower() == "true":
-        if not done:
-            return "pass", "no successful writes, as escalation requires"
-        return "fail", f"successful writes on an escalation ticket: {sorted(done)}"
-    if unmapped:
-        return "not_evaluable", f"no mock function for {unmapped}"
-    if done == exp:
-        return "pass", f"writes match {sorted(exp)}"
-    return "fail", f"expected writes {sorted(exp)}, executed {sorted(done)}"
+def write_results(rows: list[dict]) -> None:
+    RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with RESULTS_PATH.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=RESULT_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def main() -> None:
     load_dotenv(ROOT / ".env")
     if not os.getenv("OPENROUTER_API_KEY"):
         raise SystemExit("OPENROUTER_API_KEY is not set (expected in .env)")
+    if not CSV_PATH.exists():
+        raise SystemExit(f"missing test set: {CSV_PATH}")
     sv.enable_langsmith()
 
-    with sv.CSV_PATH.open(newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    TRACE_DIR.mkdir(parents=True, exist_ok=True)
-    app = sv.build_graph()
+    with CSV_PATH.open(newline="", encoding="utf-8") as f:
+        tickets = list(csv.DictReader(f))
+    if len(tickets) != 24:
+        raise SystemExit(f"expected 24 tickets in {CSV_PATH.name}, found {len(tickets)}")
 
+    app = sv.build_graph()
     results = []
-    for i, row in enumerate(rows):
+    for i, row in enumerate(tickets):
         if i:
             time.sleep(PAUSE_S)
         tid = row["ticket_id"]
-        shop = sv.SHOP_FOR_TICKET.get(tid, row["shop_domain"])
-        shop_in_store = shop in sv.mock.FIXTURES
-        sv.mock.reset_store()
-        EVENTS.clear()
-        CURRENT["node"] = None
-        state = app.invoke(
-            {"ticket": row, "shop_domain": shop, "decision": None, "error": "", "calls": []},
-            config={"run_name": tid, "tags": ["eval", tid],
-                    "metadata": {"ticket_id": tid, "expected_route": row["expected_route"]}},
+        output = run_one(app, row)
+        tool_calls = output["tools_called"]
+        errored = output["final_status"].startswith("error")
+        routing = grade_routing(output["predicted_route"], row["expected_route"])
+        resolution = grade_resolution(
+            output["calls"],
+            row["expected_tool_calls"],
+            row["expected_fix"],
+            row["order_id"],
+            row["amount_in_question"],
+            errored=errored,
+        )
+        record = {
+            "ticket_id": tid,
+            "predicted_route": output["predicted_route"],
+            "tools_called": tools_called_cell(tool_calls),
+            "final_status": output["final_status"],
+            "routing_pass": routing,
+            "resolution_pass": resolution,
+        }
+        results.append(record)
+        write_results(results)
+        print(
+            f"{tid} predicted={record['predicted_route'] or '-'} "
+            f"routing_pass={routing} resolution_pass={resolution} "
+            f"status={record['final_status']}",
+            flush=True,
         )
 
-        predicted = state["decision"]["agent"] if state["decision"] else ""
-        routing = "pass" if predicted == row["expected_route"] else "fail"
-        resolution, note = score_resolution(row, state["calls"], shop_in_store)
-        exp, _ = expected_writes(row["expected_tool_calls"])
-        executed = sorted({c["tool"] for c in state["calls"] if c.get("mode") == "WRITE" and c.get("status") == "ok"})
-        rejected = [f"{c.get('tool')}: {c.get('message', '')}" for c in state["calls"] if c.get("status") == "rejected"]
-
-        trace_doc = {
-            "ticket_id": tid,
-            "merchant_name": row["merchant_name"],
-            "shop_domain": shop,
-            "shop_in_store": shop_in_store,
-            "expected_route": row["expected_route"],
-            "should_escalate": row["should_escalate"],
-            "triage_error": state["error"],
-            "decision": state["decision"],
-            "routing": routing,
-            "resolution": resolution,
-            "resolution_note": note,
-            "events": list(EVENTS),
-        }
-        (TRACE_DIR / f"{tid}.json").write_text(
-            json.dumps(trace_doc, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-
-        results.append({
-            "ticket_id": tid,
-            "merchant_name": row["merchant_name"],
-            "shop_domain": shop,
-            "shop_in_store": shop_in_store,
-            "expected_route": row["expected_route"],
-            "predicted_route": predicted,
-            "routing": routing,
-            "should_escalate": row["should_escalate"],
-            "expected_writes": ";".join(sorted(exp)),
-            "executed_writes": ";".join(executed),
-            "rejected_calls": " | ".join(rejected),
-            "triage_error": state["error"],
-            "resolution": resolution,
-            "resolution_note": note,
-        })
-        print(f"{tid} routing={routing} predicted={predicted or '-'} expected={row['expected_route']} "
-              f"resolution={resolution} ({note})", flush=True)
-
-    with RESULTS_PATH.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=RESULT_FIELDS)
-        writer.writeheader()
-        writer.writerows(results)
-
     total = len(results)
-    routed = sum(r["routing"] == "pass" for r in results)
-    res_counts = {k: sum(r["resolution"] == k for r in results) for k in ("pass", "fail", "not_evaluable")}
-    print(f"\nrouting: {routed}/{total} pass")
-    print(f"resolution: pass={res_counts['pass']} fail={res_counts['fail']} not_evaluable={res_counts['not_evaluable']}")
+    routed = sum(r["routing_pass"] == "pass" for r in results)
+    resolved = sum(r["resolution_pass"] == "pass" for r in results)
+    print(f"\nrouting_pass: {routed}/{total}")
+    print(f"resolution_pass: {resolved}/{total}")
     print(f"results: {RESULTS_PATH}")
 
 

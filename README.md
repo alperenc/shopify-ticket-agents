@@ -184,47 +184,47 @@ Checked: the decision is `billing` with reason and confidence filled, and every 
 
 ## Eval
 
-`eval/run_eval.py` runs all 24 tickets through the supervisor graph, saves one trace per ticket in `eval/traces/`, and writes `eval/results.csv` (24 rows, with separate `routing` and `resolution` columns). Run it from the repo root:
+`eval/run_eval.py` loads `shopify_merchant_tickets_test_set.csv`, runs all 24 tickets through the billing and orders supervisor graph with LangSmith tracing on, and writes `eval/results.csv` (one row per `ticket_id`). Run it from the repo root:
 
 ```bash
 .venv/bin/python eval/run_eval.py
 ```
 
-LangSmith tracing turns on when `LANGSMITH_API_KEY` is in `.env`. Also set `LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com`, `LANGSMITH_AGENT_ID=shopify-ticket-agents` and `LANGSMITH_AGENT_ENVIRONMENT=local`. Do not set `LANGSMITH_PROJECT`, because the SDK errors when a project and an agent address are both set. Runs land in the `shopify-ticket-agents-local` project, named by ticket ID.
+Columns: `predicted_route`, `tools_called`, `final_status`, `routing_pass`, `resolution_pass`. LangSmith tracing turns on when `LANGSMITH_API_KEY` is in `.env`. Also set `LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com`, `LANGSMITH_AGENT_ID=shopify-ticket-agents` and `LANGSMITH_AGENT_ENVIRONMENT=local`. Do not set `LANGSMITH_PROJECT`, because the SDK errors when a project and an agent address are both set. Runs land in the `shopify-ticket-agents-local` project, named by ticket ID.
 
-### Baseline
+## Baseline eval
 
-- **Routing:** 24 of 24 pass.
-- **Resolution:** 0 pass, 1 fail, 23 not evaluable.
+Baseline from `eval/results.csv`: **2 of 24** tickets pass both routing and resolution (SUP-48213 and SUP-48361). Routing is 24 of 24. Resolution is 2 of 24.
 
-Of the 23 not evaluable, 22 tickets belong to shops that are not in the fake store, and SUP-48339 expects `update_fulfillment`, which the mock API does not have. The one resolution fail is SUP-48213 (Maria Sousa).
-
-### Scoring rules
-
-Scoring is rule-based code in `eval/run_eval.py`, not an LLM prompt.
-
-- **Routing:** the triage `agent` equals the CSV `expected_route`.
-- **Resolution:** the set of successful write calls equals the CSV's expected writes, after mapping CSV tool names to mock API names. Escalation tickets pass only with no successful writes. It checks which functions were written, not the values written.
-- **Not evaluable:** the ticket's shop is not in the fake store, or the CSV expects a write with no mock function (`refund_app_charge`, `update_fulfillment`).
-
-On `expected_fix`: checking it changed the tool names, because the CSV uses names the mock API calls differently (for example `apply_billing_credit` is `issue_billing_credit`), so the scorer maps them. I kept the check to which write functions ran; tool order and key arguments such as rate values and amounts are not scored.
-
-### Key prompt
-
-The prompt under test is the triage prompt, exactly as in `agents/supervisor.py`:
+Scoring request:
 
 ```text
-You route Shopify merchant support tickets to one agent. Reply with only a JSON object with exactly these keys: "agent" (exactly "billing" or "orders"), "reason" (one neutral sentence in English), and "confidence" (a number from 0 to 1). "billing" covers charges, payouts, plan or app subscriptions, invoices, chargebacks and payment holds. "orders" covers orders, fulfilment, shipping, addresses, and refunds or cancellations of orders. Do not address the merchant as 'you'. Do not invent facts.
+Grade routing_pass against expected_route. Grade resolution_pass against expected_tool_calls, read together with expected_fix, using this rule: every expected tool name must be called, and the order_id and amount arguments must match the ticket's order_id and amount_in_question; tool order does not matter. Keep routing_pass and resolution_pass as two separate columns. If a ticket makes no tool call or the run errors, still write its row, say so in final_status, and mark it fail.
 ```
 
-### Fail row checked against LangSmith
+**Resolution rule.** Every name in `expected_tool_calls` must appear in the run (CSV names map onto the mock API: `apply_billing_credit` → `issue_billing_credit`, `get_billing_invoice` / `list_app_charges` → `list_billing_charges`, `get_shipping_profile` → `get_delivery_profile`, `update_order_address` → `update_order_shipping_address`). Extra calls are allowed. Tool order does not matter. When a matching tool takes `order_id` or `amount`, those arguments must equal the ticket's `order_id` and `amount_in_question`. A run with no tool calls, or a run that errors, is fail.
 
-The CSV has one fail row, not two. It is checked below, plus SUP-48339, the only other ticket with store data (not a fail row). Each trace finding is also in the `langsmith_trace_note` column of `eval/results.csv`.
+SUP-48339 is why those arguments are scored. `expected_fix` is to credit the duplicate **USD 105.00** Grow plan charge and mark order 1290 fulfilled (`order_id` `gid://shopify/Order/5938471100263`). The run called `issue_billing_credit` with **amount 19.99** on fixture charge `chg_nw_5503`. Name-only scoring would count that as `apply_billing_credit`. The 19.99 is the fixture's ReviewStream duplicate, not the ticket amount.
+
+On `expected_fix`: reading it with `expected_tool_calls` is why the scorer maps those CSV names onto the mock API, and why `order_id` and `amount` are checked (the fix names those ticket fields). Every expected tool name is still required; tool order is still ignored.
+
+### Fail rows checked against LangSmith
+
+Two fail rows from this run, checked against the CSV and the traces in `shopify-ticket-agents-local`:
 
 | | CSV row | LangSmith run |
 | --- | --- | --- |
-| **SUP-48213** (fail) | routing pass, predicted and expected `orders`; executed writes none; 3 rejected calls; resolution fail, expected `update_shipping_rate` | Run `01a1e3bb-407f-77b1-8883-72993c4afe85`: triage `orders` at 0.92; 11 admin calls (`get_shop`, `get_delivery_profile`, 9 `list_orders`, 3 rejected for an ISO timestamp where a date is required); no write; all 4 agent rounds spent on reads. Matches the CSV. |
-| **SUP-48339** (not evaluable) | routing pass, predicted and expected `billing`; executed writes `issue_billing_credit`; no rejected calls; resolution not evaluable | Run `01a1e3de-7fe2-75a7-b71a-a0aacd38d232`: triage `billing` at 0.77; 4 admin calls, all ok (`list_billing_charges` x2, `get_app_subscriptions`, `issue_billing_credit` of 19.99 on `chg_nw_5503`). Matches the CSV. The 19.99 is the fixture's duplicate, not the ticket's 105 plan charge. |
+| **SUP-48339** (fail) | routing pass (`billing`); expected `get_billing_invoice;apply_billing_credit;get_order;get_fulfillment;update_fulfillment`; `amount_in_question` USD 105.00; `order_id` `gid://shopify/Order/5938471100263`; `tools_called` `get_app_subscriptions;list_billing_charges;issue_billing_credit`; resolution fail | Run `01a1e493-5c1e-71cc-b77c-afab88d48793`: triage `billing`; 3 admin calls, all ok (`get_app_subscriptions`, `list_billing_charges`, `issue_billing_credit` of **19.99** on `chg_nw_5503`). Matches the CSV. Missing `get_order`, `get_fulfillment`, `update_fulfillment`. The credit amount is 19.99, not 105.00. |
+| **SUP-48478** (fail) | routing pass (`orders`); expected `get_order;create_refund`; `order_id` `gid://shopify/Order/5944906251378`; `amount_in_question` USD 25.00; `tools_called` `get_order;calculate_refund;get_shop;get_shop;get_order;list_orders;get_order`; resolution fail | Run `01a1e4a4-7f70-7532-a9c9-b6cc6f9373a1`: 7 admin calls, all rejected (shop not in the fake store). `get_order` and `calculate_refund` used the ticket GID and amount 25.0. `create_refund` was never called. Matches the CSV. |
+
+### Fails by cause
+
+22 tickets fail resolution. None fail routing.
+
+- **Wrong route:** none.
+- **Wrong tool:** SUP-48478 (`calculate_refund` in place of `create_refund`).
+- **Wrong argument:** none as a sole cause. No fail had every expected tool name present. SUP-48339's credit was also the wrong amount (19.99 vs 105.00).
+- **Missing tool:** the other 21. Lookups without the expected write: SUP-48197, SUP-48258, SUP-48279, SUP-48302, SUP-48412, SUP-48531, SUP-48577 (`refund_app_charge` or `apply_billing_credit`); SUP-48241, SUP-48377 (`update_order_address`); SUP-48226, SUP-48266, SUP-48346, SUP-48436 (`get_fulfillment` / `update_fulfillment`); SUP-48288 (`create_refund`); SUP-48327 (`cancel_order`); SUP-48339 (`get_order`, `get_fulfillment`, `update_fulfillment`). No tool calls: SUP-48204, SUP-48455 (`get_shop;get_payout`); escalate tickets SUP-48315 and SUP-48502 (empty expected list; the scorer still fails a run with no calls). SUP-48394 errored (`ParseError`) after `get_order;list_order_transactions;get_shop`.
 
 ## Status
 
