@@ -207,8 +207,57 @@ def parse_plan(text: str):
     return data["calls"], ""
 
 
+def delivery_rate_snapshot(shop_domain: str) -> dict:
+    """Live rate_id → price on the shop. Call before any update_shipping_rate write."""
+    profile = mock._require_shop(shop_domain)["delivery_profile"]
+    return {
+        rate["id"]: round(float(rate["price"]), 2)
+        for zone in profile["zones"]
+        for rate in zone["rates"]
+    }
+
+
+def _rate_write(call) -> tuple | None:
+    if not isinstance(call, dict) or call.get("tool") != "update_shipping_rate":
+        return None
+    args = call.get("args") if isinstance(call.get("args"), dict) else {}
+    if "rate_id" not in args or "price" not in args:
+        return None
+    try:
+        return str(args["rate_id"]), round(float(args["price"]), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def is_matched_rate_swap(args: dict, batch: list, snapshot: dict) -> bool:
+    """True when this write is one half of exchanging two live snapshot prices.
+
+    The batch must contain exactly two rate_ids, each set to the other's snapshot
+    price. One call per rate. A lone write cannot pass.
+    """
+    try:
+        this_id = str(args["rate_id"])
+        this_price = round(float(args["price"]), 2)
+    except (KeyError, TypeError, ValueError):
+        return False
+    writes = {}
+    for call in batch or []:
+        parsed = _rate_write(call)
+        if parsed is None:
+            continue
+        rate_id, price = parsed
+        writes[rate_id] = price
+    writes[this_id] = this_price
+    if len(writes) != 2:
+        return False
+    (id_a, price_a), (id_b, price_b) = tuple(writes.items())
+    if id_a not in snapshot or id_b not in snapshot:
+        return False
+    return price_a == snapshot[id_b] and price_b == snapshot[id_a]
+
+
 @traceable(run_type="tool", name="admin_call")
-def execute(agent: str, call, shop_domain: str) -> dict:
+def execute(agent: str, call, shop_domain: str, batch=None, rate_snapshot=None) -> dict:
     tool = call.get("tool") if isinstance(call, dict) else None
     args = call.get("args", {}) if isinstance(call, dict) else {}
     entry = {"tool": tool, "args": args, "mode": None}
@@ -225,6 +274,17 @@ def execute(agent: str, call, shop_domain: str) -> dict:
                 "message": f"unknown args {sorted(unknown)}, missing args {sorted(missing)}"}
     if args.get("shop_domain", shop_domain) != shop_domain:
         return {**entry, "status": "rejected", "message": f"shop_domain must be {shop_domain!r} for this ticket"}
+    if tool == "update_shipping_rate":
+        # Snapshot is taken here, before spec["fn"] runs, so before this write.
+        # A snapshot passed in was taken before the first write of the batch.
+        if rate_snapshot is None:
+            rate_snapshot = delivery_rate_snapshot(shop_domain)
+        if not is_matched_rate_swap(args, batch if batch is not None else [call], rate_snapshot):
+            return {
+                **entry,
+                "status": "rejected",
+                "message": "update_shipping_rate must be one half of a two-rate exchange of the live rates",
+            }
     try:
         result = spec["fn"](**args)
     except mock.ToolError as exc:
@@ -253,8 +313,17 @@ def run_agent(agent: str, ticket: dict, shop_domain: str) -> list[dict]:
         if not calls:
             break
         results = []
+        rate_writes = [
+            c for c in calls
+            if isinstance(c, dict) and c.get("tool") == "update_shipping_rate"
+        ]
+        # One snapshot for the whole round, taken before the first write.
+        rate_snapshot = delivery_rate_snapshot(shop_domain) if rate_writes else None
         for call in calls:
-            entry = {"round": rnd, **execute(agent, call, shop_domain)}
+            entry = {
+                "round": rnd,
+                **execute(agent, call, shop_domain, batch=calls, rate_snapshot=rate_snapshot),
+            }
             log.append(entry)
             results.append(entry)
         messages.append({"role": "assistant", "content": text})
