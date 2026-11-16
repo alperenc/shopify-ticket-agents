@@ -1,0 +1,31 @@
+{
+  "ticket_id": "SUP-48455",
+  "merchant_name": "Nadia Haddad",
+  "shop_domain": "prairie-tallow-soap.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "billing",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The ticket reports a CAD 2,140.75 payout still showing as scheduled past its expected deposit date and asks whether the account or bank details are affected, which concerns payouts and payment holds.",
+    "confidence": 0.98
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"billing\",\n  \"reason\": \"The ticket reports a CAD 2,140.75 payout still showing as scheduled past its expected deposit date and asks whether the account or bank details are affected, which concerns payouts and payment holds.\",\n  \"confidence\": 0.98\n}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": []}"
+    }
+  ]
+}

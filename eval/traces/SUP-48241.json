@@ -1,0 +1,121 @@
+{
+  "ticket_id": "SUP-48241",
+  "merchant_name": "Sabine Krüger",
+  "shop_domain": "blackforest-botanicals.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The request concerns correcting a delivery address on an unshipped order before fulfilment, which falls under orders, shipping, and addresses.",
+    "confidence": 0.99
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"orders\",\n  \"reason\": \"The request concerns correcting a delivery address on an unshipped order before fulfilment, which falls under orders, shipping, and addresses.\",\n  \"confidence\": 0.99\n}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"blackforest-botanicals.myshopify.com\", \"order_id\": \"gid://shopify/Order/5921377054812\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "blackforest-botanicals.myshopify.com",
+        "order_id": "gid://shopify/Order/5921377054812"
+      },
+      "status": "rejected",
+      "message": "Shop 'blackforest-botanicals.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"blackforest-botanicals.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "blackforest-botanicals.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'blackforest-botanicals.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"blackforestbotanicals.myshopify.com\"}}, {\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"www.blackforest-botanicals.myshopify.com\"}}, {\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"blackforestbotanicals.shop\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "blackforestbotanicals.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'blackforest-botanicals.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "www.blackforest-botanicals.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'blackforest-botanicals.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "blackforestbotanicals.shop"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'blackforest-botanicals.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"list_orders\", \"args\": {\"shop_domain\": \"blackforest-botanicals.myshopify.com\"}}, {\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"blackforest-botanicals.myshopify.com\", \"order_id\": \"5921377054812\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_orders",
+      "args": {
+        "shop_domain": "blackforest-botanicals.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'blackforest-botanicals.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "blackforest-botanicals.myshopify.com",
+        "order_id": "5921377054812"
+      },
+      "status": "rejected",
+      "message": "Shop 'blackforest-botanicals.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

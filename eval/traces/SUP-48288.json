@@ -1,0 +1,92 @@
+{
+  "ticket_id": "SUP-48288",
+  "merchant_name": "Marc-André Gagnon",
+  "shop_domain": "erable-and-oak.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The request concerns a partial refund of a single defective item from order 2215, including how shipping is handled and waiving a return, which falls under order fulfilment and refunds.",
+    "confidence": 0.95
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\":\"orders\",\"reason\":\"The request concerns a partial refund of a single defective item from order 2215, including how shipping is handled and waiving a return, which falls under order fulfilment and refunds.\",\"confidence\":0.95}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"erable-and-oak.myshopify.com\", \"order_id\": \"gid://shopify/Order/5927640318845\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "erable-and-oak.myshopify.com",
+        "order_id": "gid://shopify/Order/5927640318845"
+      },
+      "status": "rejected",
+      "message": "Shop 'erable-and-oak.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"erable-and-oak.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "erable-and-oak.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'erable-and-oak.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"erable-and-oak.myshopify.com\", \"order_id\": \"gid://shopify/Order/5927640318845\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "erable-and-oak.myshopify.com",
+        "order_id": "gid://shopify/Order/5927640318845"
+      },
+      "status": "rejected",
+      "message": "Shop 'erable-and-oak.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"erableandoak.myshopify.com\", \"order_id\": \"gid://shopify/Order/5927640318845\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "erableandoak.myshopify.com",
+        "order_id": "gid://shopify/Order/5927640318845"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'erable-and-oak.myshopify.com' for this ticket"
+    }
+  ]
+}

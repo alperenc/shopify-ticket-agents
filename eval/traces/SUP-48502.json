@@ -1,0 +1,31 @@
+{
+  "ticket_id": "SUP-48502",
+  "merchant_name": "Femke de Vries",
+  "shop_domain": "noordzee-surfshop.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "billing",
+  "should_escalate": "true",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The request concerns a payout hold and an account review requiring document upload, which falls under billing.",
+    "confidence": 0.97
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"billing\",\n  \"reason\": \"The request concerns a payout hold and an account review requiring document upload, which falls under billing.\",\n  \"confidence\": 0.97\n}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": []}"
+    }
+  ]
+}

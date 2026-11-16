@@ -1,0 +1,142 @@
+{
+  "ticket_id": "SUP-48346",
+  "merchant_name": "Camille Rousseau",
+  "shop_domain": "atelier-lin-bleu.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The report concerns fulfilment status and tracking for order 3071, which falls within orders rather than billing.",
+    "confidence": 0.97
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"orders\",\n  \"reason\": \"The report concerns fulfilment status and tracking for order 3071, which falls within orders rather than billing.\",\n  \"confidence\": 0.97\n}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\"}}, {\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\", \"order_id\": \"gid://shopify/Order/5939125587014\"}}, {\"tool\": \"get_delivery_profile\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com",
+        "order_id": "gid://shopify/Order/5939125587014"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_delivery_profile",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"https://atelier-lin-bleu.myshopify.com\"}}, {\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"atelierlinbleu.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "https://atelier-lin-bleu.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'atelier-lin-bleu.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "atelierlinbleu.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'atelier-lin-bleu.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\", \"order_id\": \"gid://shopify/Order/5939125587014\"}}, {\"tool\": \"get_delivery_profile\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com",
+        "order_id": "gid://shopify/Order/5939125587014"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_delivery_profile",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\", \"order_id\": \"5939125587014\"}}, {\"tool\": \"list_orders\", \"args\": {\"shop_domain\": \"atelier-lin-bleu.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com",
+        "order_id": "5939125587014"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_orders",
+      "args": {
+        "shop_domain": "atelier-lin-bleu.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'atelier-lin-bleu.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

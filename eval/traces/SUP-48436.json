@@ -1,0 +1,31 @@
+{
+  "ticket_id": "SUP-48436",
+  "merchant_name": "Bronwyn Tate",
+  "shop_domain": "coral-coast-candles.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The report concerns a specific order that has remained on hold with the fulfilment button unavailable, and asks for that hold to be released so fulfilment can proceed.",
+    "confidence": 0.92
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\":\"orders\",\"reason\":\"The report concerns a specific order that has remained on hold with the fulfilment button unavailable, and asks for that hold to be released so fulfilment can proceed.\",\"confidence\":0.92}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "<tool_call>get_order\n<arg_key>shop_domain</arg_key>\n<arg_value>coral-coast-candles.myshopify.com</arg_value>\n<arg_key>order_id</arg_key>\n<arg_value>gid://shopify/Order/5943318872601</arg_value>\n</tool_call>\n<tool_call>list_order_transactions\n<arg_key>shop_domain</arg_key>\n<arg_value>coral-coast-candles.myshopify.com</arg_value>\n<arg_key>order_id</arg_key>\n<arg_value>gid://shopify/Order/5943318872601</arg_value>\n</tool_call>"
+    }
+  ]
+}

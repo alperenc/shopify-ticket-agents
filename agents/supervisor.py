@@ -24,6 +24,8 @@ from typing import Literal, Optional, TypedDict
 
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
+from langsmith import traceable
+from langsmith.wrappers import wrap_openai
 from openai import OpenAI, RateLimitError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -107,8 +109,26 @@ class SupState(TypedDict):
     calls: list
 
 
+def enable_langsmith() -> bool:
+    """Turn on LangSmith tracing when LANGSMITH_API_KEY is set (call after load_dotenv).
+
+    LangGraph traces the graph and its nodes automatically. wrap_openai() in chat() records every
+    model call, and @traceable on execute() records every admin call. LANGSMITH_ENDPOINT,
+    LANGSMITH_AGENT_ID and LANGSMITH_AGENT_ENVIRONMENT come from .env.
+    """
+    if not os.getenv("LANGSMITH_API_KEY"):
+        print("LangSmith: LANGSMITH_API_KEY not set in .env, tracing is off")
+        return False
+    # Do not set LANGSMITH_PROJECT: with LANGSMITH_AGENT_ID and LANGSMITH_AGENT_ENVIRONMENT set, the
+    # SDK picks the destination from the agent address and errors if a project is set as well.
+    os.environ["LANGSMITH_TRACING"] = "true"
+    print(f"LangSmith: tracing on, agent {os.getenv('LANGSMITH_AGENT_ID')!r} "
+          f"environment {os.getenv('LANGSMITH_AGENT_ENVIRONMENT')!r}, endpoint {os.getenv('LANGSMITH_ENDPOINT', 'default')}")
+    return True
+
+
 def chat(messages: list[dict]) -> str:
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.environ["OPENROUTER_API_KEY"])
+    client = wrap_openai(OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.environ["OPENROUTER_API_KEY"]))
     for attempt in range(1, 7):
         try:
             resp = client.chat.completions.create(model=MODEL, max_tokens=4000, messages=messages)  # reasoning models need headroom
@@ -187,6 +207,7 @@ def parse_plan(text: str):
     return data["calls"], ""
 
 
+@traceable(run_type="tool", name="admin_call")
 def execute(agent: str, call, shop_domain: str) -> dict:
     tool = call.get("tool") if isinstance(call, dict) else None
     args = call.get("args", {}) if isinstance(call, dict) else {}
@@ -290,6 +311,7 @@ def main() -> None:
     load_dotenv(ROOT / ".env")
     if not os.getenv("OPENROUTER_API_KEY"):
         raise SystemExit("OPENROUTER_API_KEY is not set (expected in .env)")
+    enable_langsmith()
 
     with CSV_PATH.open(newline="", encoding="utf-8") as f:
         tickets = {r["ticket_id"]: r for r in csv.DictReader(f)}

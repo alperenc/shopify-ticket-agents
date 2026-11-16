@@ -182,6 +182,50 @@ billing exit 0
 
 Checked: the decision is `billing` with reason and confidence filled, and every call is in the billing agent's list. The credit of 19.99 is within charge `chg_nw_5503`, the fixture's duplicate, and the agent credited the fixture's duplicate rather than the ticket's $105.
 
+## Eval
+
+`eval/run_eval.py` runs all 24 tickets through the supervisor graph, saves one trace per ticket in `eval/traces/`, and writes `eval/results.csv` (24 rows, with separate `routing` and `resolution` columns). Run it from the repo root:
+
+```bash
+.venv/bin/python eval/run_eval.py
+```
+
+LangSmith tracing turns on when `LANGSMITH_API_KEY` is in `.env`. Also set `LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com`, `LANGSMITH_AGENT_ID=shopify-ticket-agents` and `LANGSMITH_AGENT_ENVIRONMENT=local`. Do not set `LANGSMITH_PROJECT`, because the SDK errors when a project and an agent address are both set. Runs land in the `shopify-ticket-agents-local` project, named by ticket ID.
+
+### Baseline
+
+- **Routing:** 24 of 24 pass.
+- **Resolution:** 0 pass, 1 fail, 23 not evaluable.
+
+Of the 23 not evaluable, 22 tickets belong to shops that are not in the fake store, and SUP-48339 expects `update_fulfillment`, which the mock API does not have. The one resolution fail is SUP-48213 (Maria Sousa).
+
+### Scoring rules
+
+Scoring is rule-based code in `eval/run_eval.py`, not an LLM prompt.
+
+- **Routing:** the triage `agent` equals the CSV `expected_route`.
+- **Resolution:** the set of successful write calls equals the CSV's expected writes, after mapping CSV tool names to mock API names. Escalation tickets pass only with no successful writes. It checks which functions were written, not the values written.
+- **Not evaluable:** the ticket's shop is not in the fake store, or the CSV expects a write with no mock function (`refund_app_charge`, `update_fulfillment`).
+
+On `expected_fix`: checking it changed the tool names, because the CSV uses names the mock API calls differently (for example `apply_billing_credit` is `issue_billing_credit`), so the scorer maps them. I kept the check to which write functions ran; tool order and key arguments such as rate values and amounts are not scored.
+
+### Key prompt
+
+The prompt under test is the triage prompt, exactly as in `agents/supervisor.py`:
+
+```text
+You route Shopify merchant support tickets to one agent. Reply with only a JSON object with exactly these keys: "agent" (exactly "billing" or "orders"), "reason" (one neutral sentence in English), and "confidence" (a number from 0 to 1). "billing" covers charges, payouts, plan or app subscriptions, invoices, chargebacks and payment holds. "orders" covers orders, fulfilment, shipping, addresses, and refunds or cancellations of orders. Do not address the merchant as 'you'. Do not invent facts.
+```
+
+### Fail row checked against LangSmith
+
+The CSV has one fail row, not two. It is checked below, plus SUP-48339, the only other ticket with store data (not a fail row). Each trace finding is also in the `langsmith_trace_note` column of `eval/results.csv`.
+
+| | CSV row | LangSmith run |
+| --- | --- | --- |
+| **SUP-48213** (fail) | routing pass, predicted and expected `orders`; executed writes none; 3 rejected calls; resolution fail, expected `update_shipping_rate` | Run `01a1e3bb-407f-77b1-8883-72993c4afe85`: triage `orders` at 0.92; 11 admin calls (`get_shop`, `get_delivery_profile`, 9 `list_orders`, 3 rejected for an ISO timestamp where a date is required); no write; all 4 agent rounds spent on reads. Matches the CSV. |
+| **SUP-48339** (not evaluable) | routing pass, predicted and expected `billing`; executed writes `issue_billing_credit`; no rejected calls; resolution not evaluable | Run `01a1e3de-7fe2-75a7-b71a-a0aacd38d232`: triage `billing` at 0.77; 4 admin calls, all ok (`list_billing_charges` x2, `get_app_subscriptions`, `issue_billing_credit` of 19.99 on `chg_nw_5503`). Matches the CSV. The 19.99 is the fixture's duplicate, not the ticket's 105 plan charge. |
+
 ## Status
 
-Early stage. The test set is the first artifact; the one-step flow and the supervisor graph are the first agents. An evaluation harness will follow.
+Early stage. The test set is the first artifact; the one-step flow and the supervisor graph are the first agents, and the eval gives the first baseline.

@@ -1,0 +1,129 @@
+{
+  "ticket_id": "SUP-48197",
+  "merchant_name": "Carla Jennings",
+  "shop_domain": "northfork-coffee.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "billing",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The message concerns a charge for the ReviewPop app subscription that appears on the bill after the app was uninstalled, which falls under billing for app subscriptions and charges.",
+    "confidence": 0.95
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\": \"billing\", \"reason\": \"The message concerns a charge for the ReviewPop app subscription that appears on the bill after the app was uninstalled, which falls under billing for app subscriptions and charges.\", \"confidence\": 0.95}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"northfork-coffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"northfork-coffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "northfork-coffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'northfork-coffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "northfork-coffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'northfork-coffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"northforkcoffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"northforkcoffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "northforkcoffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'northfork-coffee.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "northforkcoffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'northfork-coffee.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"northfork-coffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"northfork-coffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "northfork-coffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'northfork-coffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "northfork-coffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'northfork-coffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"https://northfork-coffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"https://northfork-coffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "https://northfork-coffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'northfork-coffee.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "https://northfork-coffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'northfork-coffee.myshopify.com' for this ticket"
+    }
+  ]
+}

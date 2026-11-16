@@ -2,3 +2,4 @@ langgraph==1.2.22
 openai==3.51.0
 python-dotenv==1.2.4
 pydantic==2.14.3
+langsmith==0.14.17

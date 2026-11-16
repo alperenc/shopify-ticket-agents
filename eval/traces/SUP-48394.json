@@ -1,0 +1,175 @@
+{
+  "ticket_id": "SUP-48394",
+  "merchant_name": "Owen Pritchard",
+  "shop_domain": "cwm-oak-furniture.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "true",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The request concerns a full refund and cancellation of an unshipped order, which falls under order handling.",
+    "confidence": 0.98
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\": \"orders\", \"reason\": \"The request concerns a full refund and cancellation of an unshipped order, which falls under order handling.\", \"confidence\": 0.98}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\", \"order_id\": \"gid://shopify/Order/5941870024556\"}}, {\"tool\": \"list_order_transactions\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\", \"order_id\": \"gid://shopify/Order/5941870024556\"}}, {\"tool\": \"calculate_refund\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\", \"order_id\": \"gid://shopify/Order/5941870024556\", \"amount\": 1480.0}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com",
+        "order_id": "gid://shopify/Order/5941870024556"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_order_transactions",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com",
+        "order_id": "gid://shopify/Order/5941870024556"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "calculate_refund",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com",
+        "order_id": "gid://shopify/Order/5941870024556",
+        "amount": 1480.0
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\"}}, {\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"cwoakfurniture.myshopify.com\"}}, {\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"cwm-oak.myshopify.com\"}}, {\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.co.uk\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "cwoakfurniture.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'cwm-oak-furniture.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "cwm-oak.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'cwm-oak-furniture.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.co.uk"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'cwm-oak-furniture.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\", \"order_id\": \"gid://shopify/Order/5941870024556\"}}, {\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\", \"order_id\": \"1906\"}}, {\"tool\": \"list_orders\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com",
+        "order_id": "gid://shopify/Order/5941870024556"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com",
+        "order_id": "1906"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_orders",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\"}}, {\"tool\": \"list_orders\", \"args\": {\"shop_domain\": \"cwm-oak-furniture.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_orders",
+      "args": {
+        "shop_domain": "cwm-oak-furniture.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'cwm-oak-furniture.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

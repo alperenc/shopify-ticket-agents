@@ -1,0 +1,129 @@
+{
+  "ticket_id": "SUP-48412",
+  "merchant_name": "Jonas Weber",
+  "shop_domain": "hafenblick-kaffee.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "billing",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The request concerns a charge for an app subscription during a stated free-trial period, a refund of that charge, and whether uninstalling will prevent future charges.",
+    "confidence": 0.97
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\":\"billing\",\"reason\":\"The request concerns a charge for an app subscription during a stated free-trial period, a refund of that charge, and whether uninstalling will prevent future charges.\",\"confidence\":0.97}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"hafenblick-kaffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"hafenblick-kaffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'hafenblick-kaffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'hafenblick-kaffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"hafenblick-kaffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"hafenblick-kaffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'hafenblick-kaffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'hafenblick-kaffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"https://hafenblick-kaffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"https://hafenblick-kaffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "https://hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'hafenblick-kaffee.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "https://hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'hafenblick-kaffee.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"hafenblick-kaffee.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"hafenblick-kaffee.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'hafenblick-kaffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "hafenblick-kaffee.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'hafenblick-kaffee.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

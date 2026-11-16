@@ -1,0 +1,130 @@
+{
+  "ticket_id": "SUP-48279",
+  "merchant_name": "Fiona Baxter",
+  "shop_domain": "thistle-and-thread.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "billing",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The request concerns charges on the Shopify bill for purchased Royal Mail shipping labels and whether the cost of the 14 voided labels can be refunded.",
+    "confidence": 0.72
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"billing\",\n  \"reason\": \"The request concerns charges on the Shopify bill for purchased Royal Mail shipping labels and whether the cost of the 14 voided labels can be refunded.\",\n  \"confidence\": 0.72\n}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"thistle-and-thread.myshopify.com\"}}, {\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"thistle-and-thread.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "thistle-and-thread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'thistle-and-thread.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "thistle-and-thread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'thistle-and-thread.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"thistleandthread.myshopify.com\"}}, {\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"thistleandthread.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "thistleandthread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'thistle-and-thread.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "thistleandthread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'thistle-and-thread.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"thistle-and-thread.myshopify.com\"}}, {\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"thistle-and-thread.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "thistle-and-thread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'thistle-and-thread.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "thistle-and-thread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'thistle-and-thread.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"thistle-and-thread.myshopify.com\", \"billing_period\": \"current\"}}, {\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"thistle-and-thread.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "thistle-and-thread.myshopify.com",
+        "billing_period": "current"
+      },
+      "status": "rejected",
+      "message": "Shop 'thistle-and-thread.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "thistle-and-thread.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'thistle-and-thread.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "ticket_id": "SUP-48478",
+  "merchant_name": "Caleb Sorensen",
+  "shop_domain": "high-desert-leather.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The request concerns issuing a partial refund on an existing order without reversing the full order or shipping charges.",
+    "confidence": 0.97
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\": \"orders\", \"reason\": \"The request concerns issuing a partial refund on an existing order without reversing the full order or shipping charges.\", \"confidence\": 0.97}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"high-desert-leather.myshopify.com\", \"order_id\": \"gid://shopify/Order/5944906251378\"}}, {\"tool\": \"list_order_transactions\", \"args\": {\"shop_domain\": \"high-desert-leather.myshopify.com\", \"order_id\": \"gid://shopify/Order/5944906251378\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "high-desert-leather.myshopify.com",
+        "order_id": "gid://shopify/Order/5944906251378"
+      },
+      "status": "rejected",
+      "message": "Shop 'high-desert-leather.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_order_transactions",
+      "args": {
+        "shop_domain": "high-desert-leather.myshopify.com",
+        "order_id": "gid://shopify/Order/5944906251378"
+      },
+      "status": "rejected",
+      "message": "Shop 'high-desert-leather.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"https://high-desert-leather.myshopify.com\", \"order_id\": \"gid://shopify/Order/5944906251378\"}}, {\"tool\": \"list_order_transactions\", \"args\": {\"shop_domain\": \"https://high-desert-leather.myshopify.com\", \"order_id\": \"gid://shopify/Order/5944906251378\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "https://high-desert-leather.myshopify.com",
+        "order_id": "gid://shopify/Order/5944906251378"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'high-desert-leather.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_order_transactions",
+      "args": {
+        "shop_domain": "https://high-desert-leather.myshopify.com",
+        "order_id": "gid://shopify/Order/5944906251378"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'high-desert-leather.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"high-desert-leather.myshopify.com\", \"order_id\": \"gid://shopify/Order/5944906251378\"}}, {\"tool\": \"list_order_transactions\", \"args\": {\"shop_domain\": \"high-desert-leather.myshopify.com\", \"order_id\": \"gid://shopify/Order/5944906251378\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "high-desert-leather.myshopify.com",
+        "order_id": "gid://shopify/Order/5944906251378"
+      },
+      "status": "rejected",
+      "message": "Shop 'high-desert-leather.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_order_transactions",
+      "args": {
+        "shop_domain": "high-desert-leather.myshopify.com",
+        "order_id": "gid://shopify/Order/5944906251378"
+      },
+      "status": "rejected",
+      "message": "Shop 'high-desert-leather.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": [{\"tool\": \"get_shop\", \"args\": {\"shop_domain\": \"high-desert-leather.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "high-desert-leather.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'high-desert-leather.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

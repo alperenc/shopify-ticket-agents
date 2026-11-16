@@ -1,0 +1,123 @@
+{
+  "ticket_id": "SUP-48327",
+  "merchant_name": "Lucía Ferrer",
+  "shop_domain": "olivar-de-la-sierra.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The request concerns cancelling duplicate order #1533, issuing a full refund, and choosing the correct restock and refund options, which falls under order cancellations and refunds.",
+    "confidence": 0.98
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"orders\",\n  \"reason\": \"The request concerns cancelling duplicate order #1533, issuing a full refund, and choosing the correct restock and refund options, which falls under order cancellations and refunds.\",\n  \"confidence\": 0.98\n}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\":[{\"tool\":\"get_order\",\"args\":{\"shop_domain\":\"olivar-de-la-sierra.myshopify.com\",\"order_id\":\"gid://shopify/Order/5936012784539\"}},{\"tool\":\"list_orders\",\"args\":{\"shop_domain\":\"olivar-de-la-sierra.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "olivar-de-la-sierra.myshopify.com",
+        "order_id": "gid://shopify/Order/5936012784539"
+      },
+      "status": "rejected",
+      "message": "Shop 'olivar-de-la-sierra.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_orders",
+      "args": {
+        "shop_domain": "olivar-de-la-sierra.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'olivar-de-la-sierra.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\":[{\"tool\":\"get_order\",\"args\":{\"shop_domain\":\"olivar-de-la-sierra.myshopify.com\",\"order_id\":\"gid://shopify/Order/5936012784539\"}},{\"tool\":\"get_order\",\"args\":{\"shop_domain\":\"olivardelasierra.myshopify.com\",\"order_id\":\"gid://shopify/Order/5936012784539\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "olivar-de-la-sierra.myshopify.com",
+        "order_id": "gid://shopify/Order/5936012784539"
+      },
+      "status": "rejected",
+      "message": "Shop 'olivar-de-la-sierra.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "olivardelasierra.myshopify.com",
+        "order_id": "gid://shopify/Order/5936012784539"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'olivar-de-la-sierra.myshopify.com' for this ticket"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\":[{\"tool\":\"get_shop\",\"args\":{\"shop_domain\":\"olivar-de-la-sierra.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_shop",
+      "args": {
+        "shop_domain": "olivar-de-la-sierra.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'olivar-de-la-sierra.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\":[{\"tool\":\"get_order\",\"args\":{\"shop_domain\":\"olivar-de-la-sierra.myshopify.com\",\"order_id\":\"gid://shopify/Order/5936012784539\"}},{\"tool\":\"list_orders\",\"args\":{\"shop_domain\":\"olivar-de-la-sierra.myshopify.com\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "olivar-de-la-sierra.myshopify.com",
+        "order_id": "gid://shopify/Order/5936012784539"
+      },
+      "status": "rejected",
+      "message": "Shop 'olivar-de-la-sierra.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_orders",
+      "args": {
+        "shop_domain": "olivar-de-la-sierra.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'olivar-de-la-sierra.myshopify.com' not found. Use the full *.myshopify.com domain."
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "ticket_id": "SUP-48302",
+  "merchant_name": "Joost van Dijk",
+  "shop_domain": "tulpvelden-prints.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "billing",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The inquiry concerns an unexpected €190 charge for the PrintPilot app subscription, which was intended to be a €19 monthly plan, along with a request for a refund of that charge.",
+    "confidence": 0.95
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"billing\",\n  \"reason\": \"The inquiry concerns an unexpected €190 charge for the PrintPilot app subscription, which was intended to be a €19 monthly plan, along with a request for a refund of that charge.\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"tulpvelden-prints.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"tulpvelden-prints.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "tulpvelden-prints.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'tulpvelden-prints.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "tulpvelden-prints.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'tulpvelden-prints.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"tulpveldenprints.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"tulpveldenprints.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "tulpveldenprints.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'tulpvelden-prints.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "tulpveldenprints.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "shop_domain must be 'tulpvelden-prints.myshopify.com' for this ticket"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"tulpvelden-prints.myshopify.com\"}}, {\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"tulpvelden-prints.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "tulpvelden-prints.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'tulpvelden-prints.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "tulpvelden-prints.myshopify.com"
+      },
+      "status": "rejected",
+      "message": "Shop 'tulpvelden-prints.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": []}"
+    }
+  ]
+}

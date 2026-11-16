@@ -1,0 +1,59 @@
+{
+  "ticket_id": "SUP-48226",
+  "merchant_name": "Brett Kowalski",
+  "shop_domain": "ridgeline-outdoor-gear.myshopify.com",
+  "shop_in_store": false,
+  "expected_route": "orders",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "orders",
+    "reason": "The issue concerns fulfillment status, shipping labels, tracking emails, and order processing, which fall under the orders category.",
+    "confidence": 0.95
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "shop not in fake store",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\n  \"agent\": \"orders\",\n  \"reason\": \"The issue concerns fulfillment status, shipping labels, tracking emails, and order processing, which fall under the orders category.\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"get_order\", \"args\": {\"shop_domain\": \"ridgeline-outdoor-gear.myshopify.com\", \"order_id\": \"gid://shopify/Order/5918204473621\"}}, {\"tool\": \"list_order_transactions\", \"args\": {\"shop_domain\": \"ridgeline-outdoor-gear.myshopify.com\", \"order_id\": \"gid://shopify/Order/5918204473621\"}}]}"
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "get_order",
+      "args": {
+        "shop_domain": "ridgeline-outdoor-gear.myshopify.com",
+        "order_id": "gid://shopify/Order/5918204473621"
+      },
+      "status": "rejected",
+      "message": "Shop 'ridgeline-outdoor-gear.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "call",
+      "tool": "list_order_transactions",
+      "args": {
+        "shop_domain": "ridgeline-outdoor-gear.myshopify.com",
+        "order_id": "gid://shopify/Order/5918204473621"
+      },
+      "status": "rejected",
+      "message": "Shop 'ridgeline-outdoor-gear.myshopify.com' not found. Use the full *.myshopify.com domain."
+    },
+    {
+      "node": "orders_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": []}"
+    }
+  ]
+}

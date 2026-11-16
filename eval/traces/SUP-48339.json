@@ -1,0 +1,93 @@
+{
+  "ticket_id": "SUP-48339",
+  "merchant_name": "Bethany Coyle",
+  "shop_domain": "northwind-coffee-roasters.myshopify.com",
+  "shop_in_store": true,
+  "expected_route": "billing",
+  "should_escalate": "false",
+  "triage_error": "",
+  "decision": {
+    "agent": "billing",
+    "reason": "The ticket primarily seeks resolution of duplicate $105 Shopify plan charges, while also mentioning an unfulfilled order.",
+    "confidence": 0.77
+  },
+  "routing": "pass",
+  "resolution": "not_evaluable",
+  "resolution_note": "no mock function for ['update_fulfillment']",
+  "events": [
+    {
+      "node": "triage",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"agent\":\"billing\",\"reason\":\"The ticket primarily seeks resolution of duplicate $105 Shopify plan charges, while also mentioning an unfulfilled order.\",\"confidence\":0.77}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 2,
+      "raw": "{\"calls\": [{\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"northwind-coffee-roasters.myshopify.com\"}}, {\"tool\": \"get_app_subscriptions\", \"args\": {\"shop_domain\": \"northwind-coffee-roasters.myshopify.com\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "northwind-coffee-roasters.myshopify.com"
+      },
+      "status": "ok",
+      "message": ""
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "get_app_subscriptions",
+      "args": {
+        "shop_domain": "northwind-coffee-roasters.myshopify.com"
+      },
+      "status": "ok",
+      "message": ""
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 4,
+      "raw": "{\"calls\": [{\"tool\": \"list_billing_charges\", \"args\": {\"shop_domain\": \"northwind-coffee-roasters.myshopify.com\", \"billing_period\": \"2024-12\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "list_billing_charges",
+      "args": {
+        "shop_domain": "northwind-coffee-roasters.myshopify.com",
+        "billing_period": "2024-12"
+      },
+      "status": "ok",
+      "message": ""
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 6,
+      "raw": "{\"calls\": [{\"tool\": \"issue_billing_credit\", \"args\": {\"shop_domain\": \"northwind-coffee-roasters.myshopify.com\", \"amount\": 19.99, \"description\": \"Duplicate app subscription charge for ReviewStream Product Reviews - Growth (sub_rvw_2207), billed twice in 2024-11. Original $105 Shopify plan charge verified as single/valid; no duplicate $105 found.\", \"charge_id\": \"chg_nw_5503\"}}]}"
+    },
+    {
+      "node": "billing_agent",
+      "event": "call",
+      "tool": "issue_billing_credit",
+      "args": {
+        "shop_domain": "northwind-coffee-roasters.myshopify.com",
+        "amount": 19.99,
+        "description": "Duplicate app subscription charge for ReviewStream Product Reviews - Growth (sub_rvw_2207), billed twice in 2024-11. Original $105 Shopify plan charge verified as single/valid; no duplicate $105 found.",
+        "charge_id": "chg_nw_5503"
+      },
+      "status": "ok",
+      "message": ""
+    },
+    {
+      "node": "billing_agent",
+      "event": "llm_reply",
+      "messages_sent": 8,
+      "raw": "{\"calls\": []}"
+    }
+  ]
+}
